@@ -33,7 +33,7 @@ class HrServiceProvider extends ServiceProvider
         // The host application binds its accounting connection; without one HR posts nothing.
         $this->app->bindIf(HrAccounting::class, NullHrAccounting::class);
 
-        foreach ([EmployeeService::class, EmployeeDocumentService::class, AttendanceService::class, LeaveService::class, SalaryStructureService::class, PayrollCalculator::class, PayrollService::class, EmployeeAdvanceService::class] as $service) {
+        foreach ([EmployeeService::class, EmployeeDocumentService::class, AttendanceService::class, LeaveService::class, SalaryStructureService::class, PayrollCalculator::class, PayrollService::class, EmployeeAdvanceService::class, \Nit\AgraniHr\Reports\HrReportService::class, \Nit\AgraniHr\Reports\HrReportExporter::class] as $service) {
             $this->app->singletonIf($service);
         }
     }

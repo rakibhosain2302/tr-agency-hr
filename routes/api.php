@@ -12,6 +12,7 @@ use Nit\AgraniHr\Http\Controllers\Api\EmployeeController;
 use Nit\AgraniHr\Http\Controllers\Api\EmployeeDocumentController;
 use Nit\AgraniHr\Http\Controllers\Api\EmployeeStatusController;
 use Nit\AgraniHr\Http\Controllers\Api\EmploymentTypeController;
+use Nit\AgraniHr\Http\Controllers\Api\HrReportController;
 use Nit\AgraniHr\Http\Controllers\Api\LeaveApplicationController;
 use Nit\AgraniHr\Http\Controllers\Api\LeaveBalanceController;
 use Nit\AgraniHr\Http\Controllers\Api\LeaveTypeController;
@@ -112,5 +113,10 @@ if (config('hr.api.enabled') ?? Nit::config('api.enabled', false)) {
                 Route::post("advances/{advance}/{$path}", [EmployeeAdvanceController::class, $action])->whereUuid('advance')->name("advances.{$path}");
             }
             Route::post('advances/{advance}/settlements/{settlement}/reverse', [EmployeeAdvanceController::class, 'reverseSettlement'])->whereUuid('advance')->whereNumber('settlement')->name('advances.settlements.reverse');
+
+            // Reports (?format=json|csv|pdf).
+            foreach (['employees', 'attendance', 'leave', 'payroll', 'advances'] as $report) {
+                Route::get("reports/{$report}", [HrReportController::class, $report])->name("reports.{$report}");
+            }
         });
 }
