@@ -1,0 +1,49 @@
+{
+    "name": "nit/agrani-hr",
+    "type": "library",
+    "description": "Reusable HR for Laravel ERP applications on nit/master: employees, personal information, documents, departments, designations, employment types, statuses, branch assignments, user links and history.",
+    "keywords": [
+        "laravel",
+        "erp",
+        "hr",
+        "employees"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.0",
+        "nit/master": "dev-master"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^11.0",
+        "phpunit/phpunit": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Nit\\AgraniHr\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Nit\\AgraniHr\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Nit\\AgraniHr\\HrServiceProvider"
+            ]
+        }
+    },
+    "repositories": {
+        "nit-master": {
+            "type": "path",
+            "url": "../nit-master"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
