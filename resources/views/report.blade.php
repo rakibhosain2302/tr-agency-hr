@@ -9,11 +9,15 @@
 
 @section('content')
     @foreach ($report->sections as $section)
+        @php
+            // An app without branches (config nit.branches off) shows no branch column.
+            $columns = config('nit.branches', true) ? $section['columns'] : array_diff_key($section['columns'], array_flip(['branch_id', 'branch', 'branch_name']));
+        @endphp
         <h3 style="margin: 18px 0 6px;">{{ $section['title'] }}</h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
             <thead>
                 <tr>
-                    @foreach ($section['columns'] as $label)
+                    @foreach ($columns as $label)
                         <th style="text-align: left; border-bottom: 1px solid #999; padding: 3px 4px;">{{ $label }}</th>
                     @endforeach
                 </tr>
@@ -21,7 +25,7 @@
             <tbody>
                 @foreach ([...$section['rows'], ...($section['totals'] !== null ? [$section['totals']] : [])] as $row)
                     <tr>
-                        @foreach (array_keys($section['columns']) as $key)
+                        @foreach (array_keys($columns) as $key)
                             <td style="border-bottom: 1px solid #eee; padding: 3px 4px;">{{ $row[$key] ?? '' }}</td>
                         @endforeach
                     </tr>

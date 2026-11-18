@@ -99,10 +99,20 @@ final class LeaveService
         });
     }
 
+    /**
+     * Reject a pending application; a super admin may also reject an approved one, whose days go back to the
+     * balance (as on cancelling it). Nobody else can undo an approval this way.
+     */
     public function reject(LeaveApplication $application, ?string $note = null): LeaveApplication
     {
         return DB::transaction(function () use ($application, $note): LeaveApplication {
-            $application = $this->pending($application);
+            $locked = LeaveApplication::query()->whereKey($application->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status === LeaveApplication::APPROVED && Approver::isSuperAdmin()) {
+                $application = $locked;
+                $this->restoreDays($application);
+            } else {
+                $application = $this->pending($application);
+            }
             Approver::ensureNotOwn(Employee::query()->withoutGlobalScopes()->find($application->employee_id), $application->applied_by);
 
             $application->forceFill(['status' => LeaveApplication::REJECTED, 'decided_by' => auth()->id(), 'decided_at' => now(), 'decision_note' => $note])->save();
@@ -122,18 +132,24 @@ final class LeaveService
             }
 
             if ($application->status === LeaveApplication::APPROVED) {
-                PayrollLock::ensureOpen($application->employee_id, $application->start_date, $application->end_date);
-                foreach ($this->daysByYear($application->start_date, $application->end_date, $application->half_day) as $year => $days) {
-                    if (Money::isPositive($days)) {
-                        $this->entry($application->employee_id, $application->leave_type_id, $year, LeaveLedgerEntry::RESTORED, $days, $application->id, "restored:{$application->id}:{$year}", now());
-                    }
-                }
+                $this->restoreDays($application);
             }
 
             $application->forceFill(['status' => LeaveApplication::CANCELLED, 'cancelled_by' => auth()->id(), 'cancelled_at' => now(), 'decision_note' => $note ?? $application->decision_note])->save();
 
             return $application;
         });
+    }
+
+    /** An approved application's days back to the balance (it is cancelled or rejected after all). */
+    private function restoreDays(LeaveApplication $application): void
+    {
+        PayrollLock::ensureOpen($application->employee_id, $application->start_date, $application->end_date);
+        foreach ($this->daysByYear($application->start_date, $application->end_date, $application->half_day) as $year => $days) {
+            if (Money::isPositive($days)) {
+                $this->entry($application->employee_id, $application->leave_type_id, $year, LeaveLedgerEntry::RESTORED, $days, $application->id, "restored:{$application->id}:{$year}", now());
+            }
+        }
     }
 
     /** Add the type's yearly entitlement (or $days) once for the year. */

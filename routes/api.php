@@ -59,9 +59,12 @@ if (config('hr.api.enabled') ?? Nit::config('api.enabled', false)) {
             Route::delete('employees/{employee}/user', [EmployeeController::class, 'unlinkUser'])->whereUuid('employee')->name('employees.user.unlink');
             Route::get('employees/{employee}/history', [EmployeeController::class, 'history'])->whereUuid('employee')->name('employees.history');
 
-            Route::get('employees/{employee}/branches', [EmployeeBranchAssignmentController::class, 'index'])->whereUuid('employee')->name('employees.branches.index');
-            Route::post('employees/{employee}/branches', [EmployeeBranchAssignmentController::class, 'store'])->whereUuid('employee')->name('employees.branches.store');
-            Route::post('employees/{employee}/branches/{assignment}/end', [EmployeeBranchAssignmentController::class, 'end'])->whereUuid('employee')->whereNumber('assignment')->name('employees.branches.end');
+            // Moving employees between branches: only where the app works with branches (nit-master's nit.branches).
+            if (config('nit.branches', true)) {
+                Route::get('employees/{employee}/branches', [EmployeeBranchAssignmentController::class, 'index'])->whereUuid('employee')->name('employees.branches.index');
+                Route::post('employees/{employee}/branches', [EmployeeBranchAssignmentController::class, 'store'])->whereUuid('employee')->name('employees.branches.store');
+                Route::post('employees/{employee}/branches/{assignment}/end', [EmployeeBranchAssignmentController::class, 'end'])->whereUuid('employee')->whereNumber('assignment')->name('employees.branches.end');
+            }
 
             Route::get('employees/{employee}/documents', [EmployeeDocumentController::class, 'index'])->whereUuid('employee')->name('employees.documents.index');
             Route::post('employees/{employee}/documents', [EmployeeDocumentController::class, 'store'])->whereUuid('employee')->name('employees.documents.store');

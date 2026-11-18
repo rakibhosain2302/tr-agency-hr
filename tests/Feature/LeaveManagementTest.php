@@ -84,6 +84,25 @@ class LeaveManagementTest extends TestCase
         $this->assertRefused('not_cancellable', fn () => $this->leave()->cancel($application));
     }
 
+    public function test_only_a_super_admin_can_reject_leave_once_it_is_approved(): void
+    {
+        $employee = $this->hire($this->dhaka);
+        $application = $this->leave()->approve($this->leave()->apply($employee, $this->casual, '2026-07-13', '2026-07-14'));
+        $this->assertSame('8.0', $this->leave()->balance($employee->id, $this->casual->id, 2026));
+
+        // An HR officer with the approving ability cannot take an approval back by rejecting it.
+        $this->actingAs($this->inBranches($this->userWith(['LeaveApplication::*']), $this->dhaka));
+        $this->assertRefused('already_decided', fn () => $this->leave()->reject($application, 'Too late'));
+        $this->assertSame(LeaveApplication::APPROVED, $application->fresh()->status);
+
+        // A super admin can: the days go back to the balance.
+        $this->actingAs($this->superAdmin());
+        $rejected = $this->leave()->reject($application, 'Office closed that week');
+        $this->assertSame([LeaveApplication::REJECTED, 'Office closed that week'], [$rejected->status, $rejected->decision_note]);
+        $this->assertSame('10.0', $this->leave()->balance($employee->id, $this->casual->id, 2026));
+        $this->assertRefused('already_decided', fn () => $this->leave()->reject($application));
+    }
+
     public function test_leave_across_the_new_year_uses_each_years_balance(): void
     {
         $employee = $this->hire($this->dhaka);
