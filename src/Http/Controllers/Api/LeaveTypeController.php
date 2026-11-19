@@ -31,7 +31,7 @@ class LeaveTypeController extends MasterDataController
     protected function rules(?Model $record): array
     {
         return [
-            'code' => ['required', 'string', 'max:30', 'regex:/^[a-z0-9_]+$/', Rule::unique('hr_leave_types', 'code')->ignore($record?->getKey())],
+            'code' => ['required', 'string', 'max:30', 'regex:/^[A-Za-z0-9_]+$/', Rule::unique('hr_leave_types', 'code')->ignore($record?->getKey())],
             'name' => ['required', 'string', 'max:100'],
             'days_per_year' => ['nullable', 'numeric', 'min:0', 'max:366', 'multiple_of:0.5'],
             'is_paid' => ['required', 'boolean'],

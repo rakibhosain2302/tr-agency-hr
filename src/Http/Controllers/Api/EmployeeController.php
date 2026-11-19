@@ -44,7 +44,7 @@ class EmployeeController extends Controller
             ->when($request->has('employed'), fn ($q) => $request->boolean('employed') ? $q->employed() : $q->whereHas('status', fn ($s) => $s->where('is_employed', false)));
 
         return EmployeeResource::collection(Table::make($query, $request)
-            ->search(['employee_code', 'first_name', 'last_name', 'phone', 'email', 'national_id'])
+            ->search(['employee_code', 'first_name', 'last_name', 'phone', 'email', 'national_id', 'department.name', 'designation.name', 'status.name'])
             ->sortable(['employee_code', 'first_name', 'joining_date'], 'employee_code')
             ->paginate(min(100, max(1, $request->integer('per_page', 25)))));
     }
