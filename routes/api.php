@@ -88,6 +88,7 @@ if (config('hr.api.enabled') ?? Nit::config('api.enabled', false)) {
             foreach (['approve', 'reject', 'cancel'] as $action) {
                 Route::post("leave-applications/{application}/{$action}", [LeaveApplicationController::class, $action])->whereUuid('application')->name("leave-applications.{$action}");
             }
+            Route::delete('leave-applications/{application}', [LeaveApplicationController::class, 'destroy'])->whereUuid('application')->name('leave-applications.destroy');
             Route::get('employees/{employee}/leave-balances', [LeaveBalanceController::class, 'index'])->whereUuid('employee')->name('employees.leave-balances.index');
             Route::post('employees/{employee}/leave-balances', [LeaveBalanceController::class, 'adjust'])->whereUuid('employee')->name('employees.leave-balances.adjust');
             Route::get('employees/{employee}/leave-history', [LeaveBalanceController::class, 'history'])->whereUuid('employee')->name('employees.leave-history');

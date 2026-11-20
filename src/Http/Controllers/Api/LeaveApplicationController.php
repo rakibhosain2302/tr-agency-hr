@@ -4,6 +4,7 @@ namespace Nit\AgraniHr\Http\Controllers\Api;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rule;
 use Nit\AgraniHr\Http\Controllers\Concerns\ResolvesEmployees;
@@ -61,6 +62,15 @@ class LeaveApplicationController extends Controller
         $application = $this->leave->apply($this->employeeOrSelf($data['employee_id'] ?? null, 'hr_leave_view'), LeaveType::query()->findOrFail($data['leave_type_id']), $data['start_date'], $data['end_date'], (bool) ($data['half_day'] ?? false), $data['reason'] ?? null);
 
         return response()->json(['data' => self::present($application->load(['employee', 'leaveType']))], 201);
+    }
+
+    /** Remove an application for good; an approved one gives its days back (not in a month of an approved payroll). */
+    #[Permission('hr_leave_delete', 'Delete leave applications')]
+    public function destroy(LeaveApplication $application): Response
+    {
+        $this->leave->delete($application);
+
+        return response()->noContent();
     }
 
     #[Permission('hr_leave_approve', 'Approve or reject leave')]

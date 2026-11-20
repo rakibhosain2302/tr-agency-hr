@@ -84,6 +84,25 @@ class LeaveManagementTest extends TestCase
         $this->assertRefused('not_cancellable', fn () => $this->leave()->cancel($application));
     }
 
+    public function test_deleting_an_application_gives_approved_days_back_and_keeps_the_ledger(): void
+    {
+        $employee = $this->hire($this->dhaka);
+        $pending = $this->leave()->apply($employee, $this->casual, '2026-07-06', '2026-07-06');
+        $approved = $this->leave()->approve($this->leave()->apply($employee, $this->casual, '2026-07-13', '2026-07-14'));
+
+        // A pending one simply goes.
+        $this->leave()->delete($pending);
+        $this->assertFalse(LeaveApplication::query()->whereKey($pending->id)->exists());
+
+        // An approved one gives its 2 days back; the ledger keeps its lines (no longer pointing at it).
+        $this->leave()->delete($approved);
+        $this->assertFalse(LeaveApplication::query()->whereKey($approved->id)->exists());
+        $balance = collect($this->leave()->balances($employee, 2026))->firstWhere('code', 'casual');
+        $this->assertSame(['0.0', '10.0'], [$balance['taken'], $balance['balance']]);
+        $this->assertSame([LeaveLedgerEntry::ENTITLEMENT, LeaveLedgerEntry::TAKEN, LeaveLedgerEntry::RESTORED], LeaveLedgerEntry::query()->orderBy('id')->pluck('kind')->all());
+        $this->assertSame(0, LeaveLedgerEntry::query()->whereNotNull('leave_application_id')->count());
+    }
+
     public function test_only_a_super_admin_can_reject_leave_once_it_is_approved(): void
     {
         $employee = $this->hire($this->dhaka);

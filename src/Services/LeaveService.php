@@ -141,6 +141,27 @@ final class LeaveService
         });
     }
 
+    /**
+     * Delete an application for good. An approved one first gives its days back to the balance (refused when
+     * they are in an approved payroll). The leave ledger keeps every line it has (it is never changed but for
+     * this): its lines only stop pointing at the application, so the balance stays right and its history stays.
+     */
+    public function delete(LeaveApplication $application): void
+    {
+        DB::transaction(function () use ($application): void {
+            $application = LeaveApplication::query()->withoutGlobalScopes()->whereKey($application->id)->lockForUpdate()->firstOrFail();
+            if ($application->status === LeaveApplication::APPROVED) {
+                $this->restoreDays($application);
+            }
+            $employee = Employee::query()->withoutGlobalScopes()->find($application->employee_id);
+
+            LeaveLedgerEntry::query()->where('leave_application_id', $application->id)->toBase()->update(['leave_application_id' => null]);
+            $application->delete();
+
+            HrLog::write('hr_leave.deleted', 'Leave of '.($employee?->activityLabel() ?? '#'.$application->employee_id)." ({$application->start_date->toDateString()} – {$application->end_date->toDateString()}, {$application->status}) deleted", null, $application->branch_id);
+        });
+    }
+
     /** An approved application's days back to the balance (it is cancelled or rejected after all). */
     private function restoreDays(LeaveApplication $application): void
     {
